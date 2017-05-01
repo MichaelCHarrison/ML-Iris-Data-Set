@@ -91,8 +91,6 @@ featurePlot(x=training[,1:4], y=training[,5],
 
 # 4. Evaluate Algorithms
 # a) Test options and evaluation metric
-
-
 # b) Spot-Check Algorithms
 # c) Compare Algorithms
 ```{r}
@@ -140,16 +138,10 @@ summary(results)
 dotplot(results, scales=scales)
 ```
 
-```{r}
-splom(results)
-```
-```{r}
-diffs <- diff(results)
-summary(diffs)
-```
-
 # 6. Finalize Model
 # a) Predictions on validation dataset
+```{r}
+predictions <- predict(fitLDA, testing)
+confusionMatrix(predictions, testing$Species)
+```
 
-# b) Create standalone model on entire training dataset
-# c) Save model for later use
