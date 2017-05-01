@@ -12,12 +12,12 @@ library(caret)
 library(caretEnsemble)
 library(ggplot2)
 library(lattice)
+library(corrplot)
 ```
 
 # b) Load dataset
 ```{r}
 data("iris")
-dataset <- iris
 ```
 
 # c) Split-out validation dataset
@@ -31,43 +31,125 @@ testing <- iris[-inTrain,]
 # 2. Summarize Data
 # a) Descriptive statistics
 ```{r}
-head(training, 6)
+head(iris, 6)
 ```
 ```{r}
-dim(training)
+dim(iris)
+```
+- Class Distribution
+```{r}
+percentage <- prop.table(table(iris$Species)) * 100
+cbind(freq = table(iris$Species), percentage = percentage)
+```
+
+```{r}
+summary(iris)
 ```
 ```{r}
-summary(training)
-```
-```{r}
-sapply(training[,1:4], sd)
-```
-```{r}
-cor(training[,1:4])
+sapply(iris[,1:4], sd)
 ```
 
 # b) Data visualizations
+- Attribute distribution
 ```{r}
+par(mfrow=c(2,4))
+for(i in 1:4){
+        hist(iris[,i], main=names(iris)[i], xlab = names(iris[i]))
+}
+for(i in 1:4){
+        plot(density(iris[,i]), main=names(iris)[i], xlab = names(iris[i]))
+}
+```
 
+```{r}
+par(mfrow = c(1,4))
+for(i in 1:4){
+        boxplot(iris[,i], main=names(iris[i]), xlab = names(iris[i]))
+}
+```
+- Correlation plots
+```{r}
+correlations <- cor(iris[,1:4])
+corrplot.mixed(correlations)
+```
+```{r}
+featurePlot(x = iris[,1:4], y = iris[,5],
+            plot = "ellipse")
+```
+
+```{r}
+featurePlot(x = iris[,1:4], y = iris[,5],
+            plot = "box")
+```
+
+
+```{r}
+scales <- list(x=list(relation = "free"), y=list(relation="free"))
+featurePlot(x=training[,1:4], y=training[,5],
+            plot= "density", scales = scales)
+```
+
+# 4. Evaluate Algorithms
+# a) Test options and evaluation metric
+
+
+# b) Spot-Check Algorithms
+# c) Compare Algorithms
+```{r}
+seed <- 7
+fitControl <- trainControl(method = "repeatedcv", number = 10, repeats = 5)
+
+#Classification and Regression Tree
+set.seed(seed)
+fitCART <- train(Species~., data = training, 
+                 method = "rpart", trControl = fitControl)
+#Linear Discriminant Analysis
+set.seed(seed)
+fitLDA <- train(Species~., data = training, 
+                 method = "lda", trControl = fitControl)
+#Support Vector Machines
+set.seed(seed)
+fitSVM <- train(Species~., data = training, 
+                 method = "svmRadial", trControl = fitControl)
+#K-Nearest Neighbors
+set.seed(seed)
+fitKNN <- train(Species~., data = training, 
+                 method = "knn", trControl = fitControl)
+#Random Forest
+set.seed(seed)
+fitRF <- train(Species~., data = training, 
+                 method = "rf", trControl = fitControl)
+#Naive Bayes
+set.seed(seed)
+fitNB <- train(Species~., data = training,
+               method = "nb", trControl = fitControl)
+
+results <- resamples(list(CART = fitCART,
+                          LDA = fitLDA,
+                          SVM = fitSVM,
+                          KNN = fitKNN,
+                          RF = fitRF,
+                          NB = fitNB))
+summary(results)
 ```
 
 
 
-# 3. Prepare Data
-# a) Data Cleaning
-# b) Feature Selection
-# c) Data Transforms
 
-# 4. Evaluate Algorithms
-# a) Test options and evaluation metric
-# b) Spot-Check Algorithms
-# c) Compare Algorithms
+```{r}
+dotplot(results, scales=scales)
+```
 
-# 5. Improve Accuracy
-# a) Algorithm Tuning
-# b) Ensembles
+```{r}
+splom(results)
+```
+```{r}
+diffs <- diff(results)
+summary(diffs)
+```
 
 # 6. Finalize Model
 # a) Predictions on validation dataset
+
 # b) Create standalone model on entire training dataset
 # c) Save model for later use
